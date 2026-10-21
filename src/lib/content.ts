@@ -152,8 +152,8 @@ export const DEFAULT_DATA: SiteData = {
     img: "https://images.pexels.com/photos/305833/pexels-photo-305833.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1100&w=1900",
   },
   contacts: {
-    email: "hello@autonomy.co",
-    phone: "+234 810 555 0148",
+    email: "info@autonomy.com.ng",
+    phone: "+234 902 469 8673",
     title: "Book a growth conversation.",
     sub: "Tell us where you want to be in twelve months. We take on a limited number of engagements each quarter and respond within two business days.",
     button: "Book a growth conversation",
@@ -469,7 +469,7 @@ The first cohort is not your product. It's your evidence. Run it as evidence, an
     {
       id: "q1",
       quote:
-        "We won't print a result we haven't shipped. When the first Tech Portal numbers land, this space becomes the case note — written with real numbers, for real decisions.",
+        "We won't print a result we haven't shipped. When the first Tech Portal numbers land, this space becomes the case note, written with real numbers, for real decisions.",
       name: "The Autonomy Team",
       role: "Founding note · replaced by our first client result",
       metrics: [

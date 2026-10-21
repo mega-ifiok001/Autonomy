@@ -1,3 +1,4 @@
+
 import {
   type ReactNode,
   createContext,
@@ -6,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import {
   DEFAULT_DATA,
   uid,
@@ -16,158 +18,159 @@ import {
 
 export * from "./content";
 
-const KEY = "autonomy-site-v3";
-const INQ_KEY = "autonomy-inquiries-v1";
+/* Base URL for the live API. Empty means same origin. */
+export const API_BASE = (
+  (import.meta.env.VITE_API_URL as string | undefined) ?? ""
+).replace(/\/$/, "");
 
-/* Base URL for the API (empty = same origin). Override with VITE_API_URL. */
-export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined ?? "")
-  .replace(/\/$/, "");
-
-export type Source = "db" | "local" | "loading";
+export type Source = "db" | "loading" | "error";
 
 type SiteCtx = {
   data: SiteData;
-  save: (next: SiteData) => void;
-  resetAll: () => void;
+  save: (next: SiteData) => Promise<void>;
+  resetAll: () => Promise<void>;
   version: number;
   source: Source;
   lastSaved: number | null;
   inquiries: Inquiry[];
-  submitInquiry: (input: InquiryInput) => void;
-  setInquiryRead: (id: string, read: boolean) => void;
-  removeInquiry: (id: string) => void;
+  submitInquiry: (input: InquiryInput) => Promise<void>;
+  setInquiryRead: (id: string, read: boolean) => Promise<void>;
+  removeInquiry: (id: string) => Promise<void>;
 };
 
 const Ctx = createContext<SiteCtx | null>(null);
 
-function fromStorage(): SiteData {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULT_DATA, ...JSON.parse(raw) } as SiteData;
-  } catch {
-    /* corrupted storage — fall back to defaults */
-  }
-  return DEFAULT_DATA;
-}
+/* Shared API request helper. Throws when the server returns an error. */
+async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    cache: "no-store",
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
 
-function persistLocal(d: SiteData) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(d));
-  } catch {
-    /* storage unavailable */
+  if (!response.ok) {
+    throw new Error(
+      `API request failed: ${response.status} ${response.statusText}`
+    );
   }
-}
 
-function inquiriesFromStorage(): Inquiry[] {
-  try {
-    const raw = localStorage.getItem(INQ_KEY);
-    if (raw) {
-      const list = JSON.parse(raw) as Inquiry[];
-      if (Array.isArray(list)) return list;
-    }
-  } catch {
-    /* corrupted storage */
+  if (response.status === 204) {
+    return undefined as T;
   }
-  return [];
-}
 
-function persistInquiries(list: Inquiry[]) {
-  try {
-    localStorage.setItem(INQ_KEY, JSON.stringify(list));
-  } catch {
-    /* storage unavailable */
-  }
+  return (await response.json()) as T;
 }
 
 export function SiteProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<SiteData>(fromStorage);
+  const [data, setData] = useState<SiteData>(DEFAULT_DATA);
   const [source, setSource] = useState<Source>("loading");
   const [lastSaved, setLastSaved] = useState<number | null>(null);
   const [version, setVersion] = useState(0);
-  const [inquiries, setInquiries] = useState<Inquiry[]>(inquiriesFromStorage);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
-  /* Hydrate content from the API (Neon via Prisma) when available. */
+  /* Load live site content from the database. */
   useEffect(() => {
     let alive = true;
-    (async () => {
+
+    async function loadSite() {
       try {
-        const r = await fetch(`${API_BASE}/api/site`, { cache: "no-store" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const json = (await r.json()) as Partial<SiteData>;
+        const json = await apiRequest<Partial<SiteData>>("/api/site");
+
         if (!alive) return;
-        const merged = { ...DEFAULT_DATA, ...json } as SiteData;
-        setData(merged);
-        persistLocal(merged);
+
+        setData({ ...DEFAULT_DATA, ...json } as SiteData);
         setSource("db");
-      } catch {
-        if (alive) setSource("local");
+      } catch (error) {
+        if (!alive) return;
+
+        console.error("Failed to load site content:", error);
+        setSource("error");
       }
-    })();
+    }
+
+    void loadSite();
+
     return () => {
       alive = false;
     };
   }, []);
 
-  /* Once the DB is confirmed reachable, hydrate inquiries from it. */
+  /* Load inquiries directly from the API once the site API is available. */
   useEffect(() => {
     if (source !== "db") return;
+
     let alive = true;
-    fetch(`${API_BASE}/api/inquiries`, { cache: "no-store" })
-      .then((r) => (r.ok ? (r.json() as Promise<Inquiry[]>) : Promise.reject(new Error("bad"))))
-      .then((list) => {
+
+    async function loadInquiries() {
+      try {
+        const list = await apiRequest<Inquiry[]>("/api/inquiries");
+
         if (alive && Array.isArray(list)) {
           setInquiries(list);
-          persistInquiries(list);
         }
-      })
-      .catch(() => {
-        /* keep the local list */
-      });
+      } catch (error) {
+        if (alive) {
+          console.error("Failed to load inquiries:", error);
+        }
+      }
+    }
+
+    void loadInquiries();
+
     return () => {
       alive = false;
     };
   }, [source]);
 
-  const pushRemote = useCallback((next: SiteData) => {
-    fetch(`${API_BASE}/api/site`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
-    })
-      .then((r) => {
-        if (r.ok) {
-          setSource("db");
-          setLastSaved(Date.now());
-        } else {
-          throw new Error(`HTTP ${r.status}`);
-        }
-      })
-      .catch(() => setSource("local"));
+  /* Save site content to the database before updating the UI. */
+  const save = useCallback(async (next: SiteData) => {
+    try {
+      await apiRequest<void>("/api/site", {
+        method: "PUT",
+        body: JSON.stringify(next),
+      });
+
+      setData(next);
+      setVersion((v) => v + 1);
+      setLastSaved(Date.now());
+      setSource("db");
+    } catch (error) {
+      setSource("error");
+      throw error;
+    }
   }, []);
 
-  const save = useCallback(
-    (next: SiteData) => {
-      setData(next);
-      persistLocal(next);
-      setVersion((v) => v + 1);
-      pushRemote(next);
-    },
-    [pushRemote]
-  );
-
-  const resetAll = useCallback(() => {
+  /* Reset the database-backed site content to its defaults. */
+  const resetAll = useCallback(async () => {
     const fresh = JSON.parse(JSON.stringify(DEFAULT_DATA)) as SiteData;
-    setData(fresh);
-    persistLocal(fresh);
-    setVersion((v) => v + 1);
-    pushRemote(fresh);
-  }, [pushRemote]);
+
+    try {
+      await apiRequest<void>("/api/site", {
+        method: "PUT",
+        body: JSON.stringify(fresh),
+      });
+
+      setData(fresh);
+      setVersion((v) => v + 1);
+      setLastSaved(Date.now());
+      setSource("db");
+    } catch (error) {
+      setSource("error");
+      throw error;
+    }
+  }, []);
 
   /* ------------------------------ inquiries ------------------------------ */
 
   const submitInquiry = useCallback(
-    (input: InquiryInput) => {
-      const inq: Inquiry = {
+    async (input: InquiryInput) => {
+      const inquiry: Inquiry = {
         id: uid(),
         name: input.name,
         email: input.email,
@@ -177,46 +180,45 @@ export function SiteProvider({ children }: { children: ReactNode }) {
         read: false,
         createdAt: Date.now(),
       };
-      setInquiries((prev) => {
-        const next = [inq, ...prev];
-        persistInquiries(next);
-        return next;
-      });
-      fetch(`${API_BASE}/api/inquiries`, {
+
+      await apiRequest<void>("/api/inquiries", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inq),
-      }).catch(() => {
-        /* offline: the local list is the source of truth */
+        body: JSON.stringify(inquiry),
       });
+
+      setInquiries((prev) => [inquiry, ...prev]);
     },
     []
   );
 
-  const setInquiryRead = useCallback((id: string, read: boolean) => {
-    setInquiries((prev) => {
-      const next = prev.map((i) => (i.id === id ? { ...i, read } : i));
-      persistInquiries(next);
-      return next;
-    });
-    fetch(`${API_BASE}/api/inquiries/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ read }),
-    }).catch(() => {
-      /* offline: local state already updated */
-    });
-  }, []);
+  const setInquiryRead = useCallback(
+    async (id: string, read: boolean) => {
+      await apiRequest<void>(
+        `/api/inquiries/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ read }),
+        }
+      );
 
-  const removeInquiry = useCallback((id: string) => {
-    setInquiries((prev) => {
-      const next = prev.filter((i) => i.id !== id);
-      persistInquiries(next);
-      return next;
-    });
-    fetch(`${API_BASE}/api/inquiries/${id}`, { method: "DELETE" }).catch(() => {
-      /* offline: local state already updated */
-    });
+      setInquiries((prev) =>
+        prev.map((inquiry) =>
+          inquiry.id === id ? { ...inquiry, read } : inquiry
+        )
+      );
+    },
+    []
+  );
+
+  const removeInquiry = useCallback(async (id: string) => {
+    await apiRequest<void>(
+      `/api/inquiries/${encodeURIComponent(id)}`,
+      { method: "DELETE" }
+    );
+
+    setInquiries((prev) =>
+      prev.filter((inquiry) => inquiry.id !== id)
+    );
   }, []);
 
   return (
@@ -241,6 +243,10 @@ export function SiteProvider({ children }: { children: ReactNode }) {
 
 export function useSite() {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useSite must be used inside SiteProvider");
+
+  if (!ctx) {
+    throw new Error("useSite must be used inside SiteProvider");
+  }
+
   return ctx;
 }

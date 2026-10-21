@@ -1,6 +1,3 @@
-// Prisma schema for Autonomy — content lives in Neon (Postgres).
-// Prisma 7: connection URLs live in prisma.config.ts (CLI) and the
-// runtime connects through a driver adapter (see server/db.ts).
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,44 +7,41 @@ datasource db {
   provider = "postgresql"
 }
 
-// ------------------------------- singletons --------------------------------
-// All singleton tables use the fixed id "main".
-
 model Hero {
-  id          String @id @default("main")
-  eyebrow     String
-  line1       String
-  line2       String
-  sub         String
-  ctaPrimary  String
+  id           String   @id @default("main")
+  eyebrow      String
+  line1        String
+  line2        String
+  sub          String
+  ctaPrimary   String
   ctaSecondary String
-  cities      String
-  img         String
-  updatedAt   DateTime @updatedAt
+  cities       String
+  img          String
+  updatedAt    DateTime @updatedAt
 }
 
 model Contact {
-  id      String  @id @default("main")
-  email   String
-  phone   String
-  title   String
-  sub     String
-  button  String
-  offices Office[]
+  id        String   @id @default("main")
+  email     String
+  phone     String
+  title     String
+  sub       String
+  button    String
   updatedAt DateTime @updatedAt
+  offices   Office[]
 }
 
 model Office {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   city      String
   line      String
-  order     Int    @default(0)
+  order     Int     @default(0)
   contactId String
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 }
 
 model About {
-  id         String       @id @default("main")
+  id         String      @id @default("main")
   eyebrow    String
   heading    String
   p1         String
@@ -55,27 +49,25 @@ model About {
   img        String
   statValue  String
   statText   String
+  updatedAt  DateTime    @updatedAt
   principles Principle[]
-  updatedAt  DateTime     @updatedAt
 }
 
 model Principle {
-  id       String @id @default(cuid())
-  n        String
-  title    String
-  copy     String
-  order    Int    @default(0)
-  aboutId  String
-  about    About  @relation(fields: [aboutId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  n       String
+  title   String
+  copy    String
+  order   Int    @default(0)
+  aboutId String
+  about   About  @relation(fields: [aboutId], references: [id], onDelete: Cascade)
 }
 
 model Settings {
-  id         String @id @default("main")
+  id         String   @id @default("main")
   modelsNote String
   updatedAt  DateTime @updatedAt
 }
-
-// --------------------------------- lists ------------------------------------
 
 model Service {
   id     String @id @default(cuid())
@@ -119,9 +111,9 @@ model Audience {
 }
 
 model Engagement {
-  key    String @id // "sprint" | "staged"
-  title  String
-  copy   String
+  key   String @id
+  title String
+  copy  String
 }
 
 model Insight {
@@ -132,7 +124,7 @@ model Insight {
   read      String
   img       String
   excerpt   String
-  body      String   @db.Text
+  body      String
   featured  Boolean  @default(false)
   highlight Boolean  @default(false)
   published Boolean  @default(true)
@@ -142,7 +134,7 @@ model Insight {
 
 model Testimonial {
   id           String   @id @default(cuid())
-  quote        String   @db.Text
+  quote        String
   name         String
   role         String
   metricAValue String
@@ -154,14 +146,31 @@ model Testimonial {
   updatedAt    DateTime @updatedAt
 }
 
-// Submissions from the site's contact form, shown in the admin dashboard.
 model Inquiry {
   id        String   @id @default(cuid())
   name      String
   email     String
   company   String
   offering  String
-  message   String   @db.Text
+  message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model autonomy_contacts {
+  id        String   @id
+  type      String
+  name      String
+  email     String
+  company   String   @default("")
+  message   String   @default("")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt], map: "autonomy_contacts_created_at_idx")
+}
+
+model autonomy_site_content {
+  id        String   @id @default("website")
+  data      Json
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
 }

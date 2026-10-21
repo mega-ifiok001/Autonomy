@@ -10,6 +10,7 @@ import {
   PhoneIcon,
   PinIcon,
 } from "./Icons";
+import footerLogo from "../../public/footer.png";
 
 export function Contact() {
   const { data, submitInquiry } = useSite();
@@ -188,7 +189,6 @@ const FOOTER_COLS: {
       { label: "Home", href: "/", path: true },
       { label: "About", href: "#about" },
       { label: "Contact", href: "#contact" },
-      { label: "Admin console", href: "/admin", path: true },
     ],
   },
   {
@@ -214,58 +214,53 @@ const FOOTER_COLS: {
 export function Footer() {
   const { data } = useSite();
   return (
-    <footer className="relative overflow-hidden bg-[#040a17] text-slate-400">
-      <div className="noise-layer" />
-      <div className="relative mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
-        <div className="grid gap-12 lg:grid-cols-[4fr_8fr]">
-          <div>
-            <a href="#/" className="flex items-center gap-2.5">
-              <LogoMark className="h-7 w-8" />
-              <span className="font-display text-[17px] font-extrabold tracking-[0.14em] text-white">
-                AUTONOMY
-              </span>
-            </a>
-            <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-slate-500">
-              {data.hero.sub}
-            </p>
-            <p className="mt-6 text-[11px] font-semibold tracking-[0.24em] text-slate-600">
-              {data.hero.cities.toUpperCase()}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
-            {FOOTER_COLS.map((c) => (
-              <div key={c.head}>
-                <p className="text-[11px] font-bold tracking-[0.26em] text-slate-600 uppercase">{c.head}</p>
-                <ul className="mt-5 space-y-3.5">
-                  {c.links.map((l) =>
-                    l.path ? (
-                      <li key={l.label}>
-                        <RouteLink to={l.href} className="text-[14px] text-slate-400 transition-colors hover:text-brand-300">
-                          {l.label}
-                        </RouteLink>
-                      </li>
-                    ) : (
-                      <li key={l.label}>
-                        <a href={l.href} className="text-[14px] text-slate-400 transition-colors hover:text-brand-300">
-                          {l.label}
-                        </a>
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center">
-          <p className="text-[12.5px] text-slate-600">© 2026 Autonomy. All rights reserved.</p>
-          <div className="flex gap-7 text-[12.5px]">
-            <a href="/" className="transition-colors hover:text-brand-300">Privacy</a>
-            <a href="/" className="transition-colors hover:text-brand-300">Terms</a>
-            <RouteLink to="/admin" className="transition-colors hover:text-brand-300">Admin</RouteLink>
-          </div>
-        </div>
+    <footer className="relative overflow-hidden border-t border-slate-200 bg-white text-slate-600">
+  <div className="relative mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+    <div className="grid gap-12 lg:grid-cols-[4fr_8fr]">
+      <div>
+        <a href="#/" className="flex items-center gap-2.5">
+          <img src={footerLogo} width={150} alt="Autonomy" />
+        </a>
+        <p className="mt-5 max-w-xs text-[14px] leading-relaxed text-slate-600">
+          {data.hero.sub}
+        </p>
+        <p className="mt-6 text-[11px] font-semibold tracking-[0.24em] text-slate-500">
+          {data.hero.cities.toUpperCase()}
+        </p>
       </div>
-    </footer>
+      <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+        {FOOTER_COLS.map((c) => (
+          <div key={c.head}>
+            <p className="text-[11px] font-bold tracking-[0.26em] text-slate-900 uppercase">{c.head}</p>
+            <ul className="mt-5 space-y-3.5">
+              {c.links.map((l) =>
+                l.path ? (
+                  <li key={l.label}>
+                    <RouteLink to={l.href} className="text-[14px] text-slate-600 transition-colors hover:text-brand-600">
+                      {l.label}
+                    </RouteLink>
+                  </li>
+                ) : (
+                  <li key={l.label}>
+                    <a href={l.href} className="text-[14px] text-slate-600 transition-colors hover:text-brand-600">
+                      {l.label}
+                    </a>
+                  </li>
+                )
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center">
+      <p className="text-[12.5px] text-slate-500">© 2026 Autonomy. All rights reserved.</p>
+      <div className="flex gap-7 text-[12.5px] text-slate-600">
+        <a href="/" className="transition-colors hover:text-brand-600">Privacy</a>
+        <a href="/" className="transition-colors hover:text-brand-600">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>
   );
 }

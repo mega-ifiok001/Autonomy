@@ -6,12 +6,14 @@ function Words({ words, startDelay }: { words: string[]; startDelay: number }) {
   return (
     <>
       {words.map((w, i) => (
-        <span key={`${w}-${i}`} className="word-mask">
-          <span
-            className="word-rise"
-            style={{ animationDelay: `${startDelay + i * 110}ms` }}
-          >
-            {w}
+        <span key={`${w}-${i}`}>
+          <span className="word-mask">
+            <span
+              className="word-rise"
+              style={{ animationDelay: `${startDelay + i * 110}ms` }}
+            >
+              {w}
+            </span>
           </span>
           {i < words.length - 1 ? " " : ""}
         </span>

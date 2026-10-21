@@ -53,7 +53,7 @@ export function Services() {
                 className="group relative border-t border-cloud pt-8 lg:border-t-0 lg:pt-0 lg:[&:not(:first-child)]:border-l lg:[&:not(:first-child)]:border-cloud lg:[&:not(:first-child)]:pl-9"
               >
                 <span className="absolute inset-x-0 top-0 hidden h-0.5 origin-left scale-x-0 bg-brand-500 transition-transform duration-500 ease-out group-hover:scale-x-100 lg:block" />
-                <Icon className="h-9 w-9 text-brand-500 transition-all duration-500 group-hover:-translate-y-1 group-hover:text-brand-600" />
+                <Icon className="h-9 w-9 pt-4 text-brand-500 transition-all duration-500 group-hover:-translate-y-1 group-hover:text-brand-600" />
                 <h3 className="mt-6 font-display text-lg font-bold text-ink">{s.title}</h3>
                 <p className="mt-3 text-[14.5px] leading-relaxed text-slate-500">{s.copy}</p>
                 {s.detail && (
