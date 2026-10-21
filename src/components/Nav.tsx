@@ -86,10 +86,7 @@ export default function Nav() {
     >
       <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
         <RouteLink to="/" className="group flex items-center gap-2.5" aria-label="Autonomy home">
-          <LogoMark className="h-7 w-8 transition-transform duration-500 group-hover:-translate-y-0.5" />
-          <span className="font-display text-[17px] font-extrabold tracking-[0.14em] text-ink">
-            AUTONOMY
-          </span>
+          <img src="/public/logo.png" width={150} alt="Autonomy" />
         </RouteLink>
 
         <ul className="hidden items-center gap-8 lg:flex">
@@ -99,25 +96,7 @@ export default function Nav() {
         </ul>
 
         <div className="flex items-center gap-2.5">
-          <RouteLink
-            to="/admin"
-            aria-label="Admin console"
-            title="Admin console"
-            className="relative hidden h-10 w-10 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-mist hover:text-brand-600 sm:flex"
-          >
-            {unread > 0 && (
-              <span
-                className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-brand-500 px-1 text-[9px] font-bold text-white ring-2 ring-white"
-                aria-hidden="true"
-              >
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M19 12a7 7 0 0 0-.14-1.4l2.1-1.63-2-3.46-2.48 1a7 7 0 0 0-2.42-1.4L13.7 2.5h-3.4l-.36 2.6a7 7 0 0 0-2.42 1.4l-2.48-1-2 3.47 2.1 1.62A7 7 0 0 0 5 12c0 .48.05.95.14 1.4l-2.1 1.63 2 3.46 2.48-1a7 7 0 0 0 2.42 1.4l.36 2.61h3.4l.36-2.6a7 7 0 0 0 2.42-1.41l2.48 1 2-3.47-2.1-1.62c.09-.45.14-.92.14-1.4Z" />
-            </svg>
-          </RouteLink>
+         
           <a
             href="#contact"
             onClick={(e) => goAnchor(e, "#contact")}
