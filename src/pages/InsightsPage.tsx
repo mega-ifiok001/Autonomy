@@ -209,7 +209,7 @@ export default function InsightsPage({ articleId }: { articleId?: string }) {
               The notes we'd want to read.
             </h1>
             <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-slate-500">
-              Opinion, playbooks and market notes from the desk — written to
+              Opinion, playbooks and market notes from the desk, written to
               prove we know the space, before the case studies exist. When the
               first real numbers land, they'll appear here as case notes.
             </p>
