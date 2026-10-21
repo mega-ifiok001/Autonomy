@@ -3,6 +3,7 @@ import { cn } from "../utils/cn";
 import { RouteLink } from "../lib/router";
 import { useSite } from "../lib/store";
 import { LogoMark, MenuIcon } from "./Icons";
+import logo from "../../public/logo.png";
 
 type NavLink = { label: string; kind: "path" | "anchor"; to: string };
 
@@ -86,7 +87,7 @@ export default function Nav() {
     >
       <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
         <RouteLink to="/" className="group flex items-center gap-2.5" aria-label="Autonomy home">
-          <img src="/public/logo.png" width={150} alt="Autonomy" />
+          <img src={logo} width={150} alt="Autonomy" />
         </RouteLink>
 
         <ul className="hidden items-center gap-8 lg:flex">
