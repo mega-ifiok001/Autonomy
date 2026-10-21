@@ -18,37 +18,38 @@ const LINKS: NavLink[] = [
   { label: "Contact", kind: "anchor", to: "#contact" },
 ];
 
-function goAnchor(e: MouseEvent<HTMLAnchorElement>, href: string) {
-  e.preventDefault();
+// Height of the floating navbar + its top gap, so sections aren't hidden under it
+const NAV_OFFSET = 96;
 
-  const id = href.slice(1);
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
+const prefersReducedMotion = () =>
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const behavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
+function scrollToId(id: string): boolean {
   const element = document.getElementById(id);
+  if (!element) return false;
 
-  if (element) {
-    element.scrollIntoView({ behavior, block: "start" });
-  } else {
-    navigateHomeThen(id);
-  }
+  const top = element.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+
+  window.scrollTo({
+    top: Math.max(top, 0),
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+  });
+  return true;
 }
 
 function navigateHomeThen(id: string) {
   window.history.pushState(null, "", "/");
   window.dispatchEvent(new PopStateEvent("popstate"));
+  window.setTimeout(() => scrollToId(id), 160);
+}
+
+function goAnchor(e: MouseEvent<HTMLAnchorElement>, href: string, delay = 0) {
+  e.preventDefault();
+  const id = href.slice(1);
 
   window.setTimeout(() => {
-    document.getElementById(id)?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-        .matches
-        ? "auto"
-        : "smooth",
-      block: "start",
-    });
-  }, 160);
+    if (!scrollToId(id)) navigateHomeThen(id);
+  }, delay);
 }
 
 export default function Nav() {
@@ -57,10 +58,8 @@ export default function Nav() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
-
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -68,9 +67,7 @@ export default function Nav() {
     const closeOnEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-
     window.addEventListener("keydown", closeOnEscape);
-
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, []);
 
@@ -78,18 +75,14 @@ export default function Nav() {
     const closeOnDesktop = () => {
       if (window.innerWidth >= 1024) setOpen(false);
     };
-
     window.addEventListener("resize", closeOnDesktop);
-
     return () => window.removeEventListener("resize", closeOnDesktop);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = previousOverflow;
     };
@@ -100,35 +93,40 @@ export default function Nav() {
       ? "text-slate-600 hover:text-ink"
       : "text-white/85 hover:text-white";
 
+  const desktopLinkClass = cn(
+    "link-grow whitespace-nowrap text-[13px] font-medium transition-colors duration-200",
+    linkColor
+  );
+
+  const drawerLinkClass =
+    "flex min-h-12 items-center rounded-xl px-4 py-3 font-display text-base font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-brand-600";
+
   const renderLink = (link: NavLink) =>
     link.kind === "path" ? (
       <RouteLink
-        key={link.label}
         to={link.to}
         onClick={() => setOpen(false)}
-        className={cn(
-          "link-grow whitespace-nowrap text-[13px] font-medium transition-colors duration-200",
-          linkColor
-        )}
+        className={desktopLinkClass}
       >
         {link.label}
       </RouteLink>
     ) : (
       <a
-        key={link.label}
         href={link.to}
-        onClick={(e) => {
-          setOpen(false);
-          goAnchor(e, link.to);
-        }}
-        className={cn(
-          "link-grow whitespace-nowrap text-[13px] font-medium transition-colors duration-200",
-          linkColor
-        )}
+        onClick={(e) => goAnchor(e, link.to)}
+        className={desktopLinkClass}
       >
         {link.label}
       </a>
     );
+
+  const drawerTransition = (index: number) => ({
+    style: { transitionDelay: open ? `${index * 45}ms` : "0ms" },
+    className: cn(
+      "transition-[opacity,transform] duration-300 motion-reduce:transition-none",
+      open ? "translate-x-0 opacity-100" : "translate-x-5 opacity-0"
+    ),
+  });
 
   return (
     <>
@@ -142,199 +140,193 @@ export default function Nav() {
               : "border-white/15 bg-navy-950/35 shadow-[0_12px_40px_-20px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           )}
         >
-          <div className="flex h-[60px] min-w-0 items-center justify-between gap-2 px-3 sm:h-[68px] sm:gap-4 sm:px-5 lg:px-6">
-            <RouteLink
-              to="/"
-              onClick={() => setOpen(false)}
-              className="flex min-w-0 shrink items-center"
-              aria-label="Autonomy home"
-            >
-              <img
-                src={logo}
-                width={135}
-                alt="Autonomy"
-                className={cn(
-                  "h-auto w-[100px] max-w-full object-contain transition-all duration-300 min-[380px]:w-[112px] sm:w-[135px]",
-                  !scrolled && !open && "brightness-0 invert"
-                )}
-              />
-            </RouteLink>
+          <div className="flex h-[60px] min-w-0 items-center gap-2 px-3 sm:h-[68px] sm:gap-4 sm:px-5 lg:px-6">
+            {/* Left column: logo */}
+            <div className="flex min-w-0 flex-1 items-center">
+              <RouteLink
+                to="/"
+                onClick={() => setOpen(false)}
+                className="flex min-w-0 shrink items-center"
+                aria-label="Autonomy home"
+              >
+                <img
+                  src={logo}
+                  width={135}
+                  alt="Autonomy"
+                  className={cn(
+                    "h-auto w-[100px] max-w-full object-contain transition-all duration-300 min-[380px]:w-[112px] sm:w-[135px]",
+                    !scrolled && !open && "brightness-0 invert"
+                  )}
+                />
+              </RouteLink>
+            </div>
 
-            {/* Desktop links */}
-            <ul className="hidden min-w-0 items-center gap-4 lg:flex xl:gap-6">
+            {/* Center column: desktop links (truly centered) */}
+            <ul className="hidden items-center gap-5 lg:flex xl:gap-7">
               {LINKS.map((link) => (
                 <li key={link.label}>{renderLink(link)}</li>
               ))}
             </ul>
 
-            {/* Desktop CTA */}
-            <a
-              href="#contact"
-              onClick={(e) => goAnchor(e, "#contact")}
-              className="hidden shrink-0 rounded-full bg-brand-500 px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(47,102,242,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-600 xl:inline-flex"
-            >
-              Partner With Us
-            </a>
+            {/* Right column: CTA (lg+) and menu toggle (below lg) */}
+            <div className="flex min-w-0 flex-1 items-center justify-end">
+              <a
+                href="#contact"
+                onClick={(e) => goAnchor(e, "#contact")}
+                className="hidden shrink-0 rounded-full bg-brand-500 px-4 py-2.5 text-[12px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(47,102,242,0.7)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-brand-600 lg:inline-flex"
+              >
+                Partner With Us
+              </a>
 
-            {/* Mobile menu toggle */}
-            <button
-              type="button"
-              onClick={() => setOpen((value) => !value)}
-              aria-label={open ? "Close menu" : "Open menu"}
-              aria-expanded={open}
-              aria-controls="mobile-navigation"
-              className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors lg:hidden",
-                scrolled || open
-                  ? "text-ink hover:bg-mist"
-                  : "text-white hover:bg-white/10"
-              )}
-            >
-              <MenuIcon open={open} className="h-5 w-5" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setOpen((value) => !value)}
+                aria-label={open ? "Close menu" : "Open menu"}
+                aria-expanded={open}
+                aria-controls="mobile-navigation"
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors lg:hidden",
+                  scrolled || open
+                    ? "text-ink hover:bg-mist"
+                    : "text-white hover:bg-white/10"
+                )}
+              >
+                <MenuIcon open={open} className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </nav>
       </header>
 
-      {/* Mobile backdrop */}
-      <button
-        type="button"
-        aria-label="Close navigation menu"
-        tabIndex={open ? 0 : -1}
-        onClick={() => setOpen(false)}
+      {/* Mobile overlay: clipped wrapper so the off-screen drawer can't cause horizontal overflow */}
+      <div
         className={cn(
-          "fixed inset-0 z-[60] cursor-default bg-navy-950/45 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden",
-          open
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        )}
-      />
-
-      {/* Right-side sliding drawer */}
-      <aside
-        id="mobile-navigation"
-        aria-label="Mobile navigation"
-        aria-hidden={!open}
-        className={cn(
-          "fixed right-0 top-0 z-[70] flex h-[100dvh] w-[min(85vw,360px)] flex-col overflow-y-auto overscroll-contain bg-white shadow-[-20px_0_60px_-20px_rgba(8,21,48,0.25)] transition-transform duration-300 ease-out motion-reduce:transition-none lg:hidden",
-          open ? "translate-x-0" : "pointer-events-none translate-x-full"
+          "fixed inset-0 z-[60] overflow-hidden transition-[visibility] duration-300 lg:hidden",
+          open ? "visible" : "pointer-events-none invisible"
         )}
       >
-        {/* Drawer header */}
-        <div className="flex min-h-[76px] items-center justify-between border-b border-slate-200 px-5 py-3">
-          <RouteLink
-            to="/"
-            onClick={() => setOpen(false)}
-            aria-label="Autonomy home"
-            tabIndex={open ? 0 : -1}
-          >
-            <img
-              src={logo}
-              width={125}
-              alt="Autonomy"
-              className="h-auto w-[125px] max-w-full object-contain"
-            />
-          </RouteLink>
+        {/* Backdrop */}
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          tabIndex={open ? 0 : -1}
+          onClick={() => setOpen(false)}
+          className={cn(
+            "absolute inset-0 cursor-default bg-navy-950/45 backdrop-blur-[2px] transition-opacity duration-300",
+            open ? "opacity-100" : "opacity-0"
+          )}
+        />
 
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="Close menu"
-            tabIndex={open ? 0 : -1}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-slate-100"
-          >
-            <span className="text-2xl leading-none" aria-hidden="true">
-              &times;
-            </span>
-          </button>
-        </div>
-
-        {/* Navigation links */}
-        <nav aria-label="Mobile navigation links" className="flex-1 px-4 py-6">
-          <p className="mb-4 px-4 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-            Explore
-          </p>
-
-          <ul className="space-y-1">
-            {LINKS.map((link, index) => (
-              <li
-                key={link.label}
-                style={{
-                  transitionDelay: open ? `${index * 45}ms` : "0ms",
-                }}
-                className={cn(
-                  "transition-[opacity,transform] duration-300 motion-reduce:transition-none",
-                  open
-                    ? "translate-x-0 opacity-100"
-                    : "translate-x-5 opacity-0"
-                )}
-              >
-                {link.kind === "path" ? (
-                  <RouteLink
-                    to={link.to}
-                    tabIndex={open ? 0 : -1}
-                    onClick={() => setOpen(false)}
-                    className="flex min-h-12 items-center rounded-xl px-4 py-3 font-display text-base font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-brand-600"
-                  >
-                    {link.label}
-                  </RouteLink>
-                ) : (
-                  <a
-                    href={link.to}
-                    tabIndex={open ? 0 : -1}
-                    onClick={(e) => {
-                      setOpen(false);
-                      goAnchor(e, link.to);
-                    }}
-                    className="flex min-h-12 items-center rounded-xl px-4 py-3 font-display text-base font-semibold text-slate-700 transition-colors hover:bg-slate-100 hover:text-brand-600"
-                  >
-                    {link.label}
-                  </a>
-                )}
-              </li>
-            ))}
-
-            <li
-              style={{
-                transitionDelay: open ? `${LINKS.length * 45}ms` : "0ms",
-              }}
-              className={cn(
-                "transition-[opacity,transform] duration-300 motion-reduce:transition-none",
-                open
-                  ? "translate-x-0 opacity-100"
-                  : "translate-x-5 opacity-0"
-              )}
+        {/* Right-side sliding drawer */}
+        <aside
+          id="mobile-navigation"
+          aria-label="Mobile navigation"
+          aria-hidden={!open}
+          className={cn(
+            "absolute right-0 top-0 flex h-full w-[min(85vw,360px)] flex-col overflow-y-auto overscroll-contain bg-white transition-transform duration-300 ease-out motion-reduce:transition-none",
+            open
+              ? "translate-x-0 shadow-[-20px_0_60px_-20px_rgba(8,21,48,0.25)]"
+              : "translate-x-full"
+          )}
+        >
+          {/* Drawer header */}
+          <div className="flex min-h-[76px] items-center justify-between border-b border-slate-200 px-5 py-3">
+            <RouteLink
+              to="/"
+              onClick={() => setOpen(false)}
+              aria-label="Autonomy home"
+              tabIndex={open ? 0 : -1}
             >
-              {/* <RouteLink
-                to="/admin"
-                tabIndex={open ? 0 : -1}
-                onClick={() => setOpen(false)}
-                className="flex min-h-12 items-center rounded-xl px-4 py-3 font-display text-base font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-brand-600"
-              >
-                Admin console
-              </RouteLink> */}
-            </li>
-          </ul>
-        </nav>
+              <img
+                src={logo}
+                width={125}
+                alt="Autonomy"
+                className="h-auto w-[125px] max-w-full object-contain"
+              />
+            </RouteLink>
 
-        {/* Bottom CTA */}
-        <div className="border-t border-slate-200 px-5 pb-8 pt-5">
-          <a
-            href="#contact"
-            tabIndex={open ? 0 : -1}
-            onClick={(e) => {
-              setOpen(false);
-              goAnchor(e, "#contact");
-            }}
-            className="flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-5 py-3.5 text-center text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(47,102,242,0.7)] transition-colors hover:bg-brand-600"
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close menu"
+              tabIndex={open ? 0 : -1}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              <span className="text-2xl leading-none" aria-hidden="true">
+                &times;
+              </span>
+            </button>
+          </div>
+
+          {/* Navigation links */}
+          <nav
+            aria-label="Mobile navigation links"
+            className="flex-1 px-4 py-6"
           >
-            Partner With Us
-          </a>
-          <p className="mt-4 text-center text-xs text-slate-400">
-            Building better possibilities.
-          </p>
-        </div>
-      </aside>
+            <p className="mb-4 px-4 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              Explore
+            </p>
+
+            <ul className="space-y-1">
+              {LINKS.map((link, index) => (
+                <li key={link.label} {...drawerTransition(index)}>
+                  {link.kind === "path" ? (
+                    <RouteLink
+                      to={link.to}
+                      tabIndex={open ? 0 : -1}
+                      onClick={() => setOpen(false)}
+                      className={drawerLinkClass}
+                    >
+                      {link.label}
+                    </RouteLink>
+                  ) : (
+                    <a
+                      href={link.to}
+                      tabIndex={open ? 0 : -1}
+                      onClick={(e) => {
+                        setOpen(false);
+                        goAnchor(e, link.to, 60);
+                      }}
+                      className={drawerLinkClass}
+                    >
+                      {link.label}
+                    </a>
+                  )}
+                </li>
+              ))}
+
+              <li {...drawerTransition(LINKS.length)}>
+                <RouteLink
+                  to="/admin"
+                  tabIndex={open ? 0 : -1}
+                  onClick={() => setOpen(false)}
+                  className={cn(drawerLinkClass, "font-medium text-slate-500")}
+                >
+                  Admin console
+                </RouteLink>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Bottom CTA */}
+          <div className="border-t border-slate-200 px-5 pb-8 pt-5">
+            <a
+              href="#contact"
+              tabIndex={open ? 0 : -1}
+              onClick={(e) => {
+                setOpen(false);
+                goAnchor(e, "#contact", 60);
+              }}
+              className="flex min-h-12 w-full items-center justify-center rounded-full bg-brand-500 px-5 py-3.5 text-center text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(47,102,242,0.7)] transition-colors hover:bg-brand-600"
+            >
+              Partner With Us
+            </a>
+            <p className="mt-4 text-center text-xs text-slate-400">
+              Building better possibilities.
+            </p>
+          </div>
+        </aside>
+      </div>
     </>
   );
 }

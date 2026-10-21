@@ -218,3 +218,30 @@ body {
     transform: none;
   }
 }
+
+/* Add to your global stylesheet (e.g. src/index.css), after the Tailwind imports */
+
+html {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Media should never be wider than its container */
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+/* If your app root is #root, this also protects against wide children */
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
