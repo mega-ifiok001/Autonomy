@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import Nav from "./components/Nav";
 import Hero from "./components/Hero";
@@ -40,7 +41,7 @@ function Shell() {
   const route = useRoute();
   const prev = useRef(route.name);
 
-  /* scroll to top when switching views (not when opening an article in place) */
+  // Scroll to the top when switching views.
   useEffect(() => {
     if (prev.current !== route.name) {
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -48,15 +49,24 @@ function Shell() {
     }
   }, [route.name]);
 
+  const isAdmin = route.name === "admin";
+
   return (
     <div className="min-h-screen bg-white font-body text-ink antialiased">
-      <Nav />
+      {!isAdmin && <Nav />}
+
       {route.name === "landing" && <Landing />}
+
       {route.name === "insights" && (
-        <InsightsPage key={route.id ?? "list"} articleId={route.id} />
+        <InsightsPage
+          key={route.id ?? "list"}
+          articleId={route.id}
+        />
       )}
-      {route.name === "admin" && <AdminDashboard />}
-      {route.name !== "admin" && <Footer />}
+
+      {isAdmin && <AdminDashboard />}
+
+      {!isAdmin && <Footer />}
     </div>
   );
 }
