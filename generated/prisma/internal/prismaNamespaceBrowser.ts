@@ -65,7 +65,11 @@ export const ModelName = {
   Engagement: 'Engagement',
   Insight: 'Insight',
   Testimonial: 'Testimonial',
-  Inquiry: 'Inquiry'
+  Inquiry: 'Inquiry',
+  autonomy_contacts: 'autonomy_contacts',
+  autonomy_site_content: 'autonomy_site_content',
+  AdminUser: 'AdminUser',
+  AdminSession: 'AdminSession'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -275,6 +279,49 @@ export const InquiryScalarFieldEnum = {
 export type InquiryScalarFieldEnum = (typeof InquiryScalarFieldEnum)[keyof typeof InquiryScalarFieldEnum]
 
 
+export const Autonomy_contactsScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  name: 'name',
+  email: 'email',
+  company: 'company',
+  message: 'message',
+  createdAt: 'createdAt'
+} as const
+
+export type Autonomy_contactsScalarFieldEnum = (typeof Autonomy_contactsScalarFieldEnum)[keyof typeof Autonomy_contactsScalarFieldEnum]
+
+
+export const Autonomy_site_contentScalarFieldEnum = {
+  id: 'id',
+  data: 'data',
+  updatedAt: 'updatedAt'
+} as const
+
+export type Autonomy_site_contentScalarFieldEnum = (typeof Autonomy_site_contentScalarFieldEnum)[keyof typeof Autonomy_site_contentScalarFieldEnum]
+
+
+export const AdminUserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  passwordHash: 'passwordHash',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AdminUserScalarFieldEnum = (typeof AdminUserScalarFieldEnum)[keyof typeof AdminUserScalarFieldEnum]
+
+
+export const AdminSessionScalarFieldEnum = {
+  tokenHash: 'tokenHash',
+  adminId: 'adminId',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type AdminSessionScalarFieldEnum = (typeof AdminSessionScalarFieldEnum)[keyof typeof AdminSessionScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -283,10 +330,26 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

@@ -92,3 +92,23 @@ export type Testimonial = Prisma.TestimonialModel
  * 
  */
 export type Inquiry = Prisma.InquiryModel
+/**
+ * Model autonomy_contacts
+ * 
+ */
+export type autonomy_contacts = Prisma.autonomy_contactsModel
+/**
+ * Model autonomy_site_content
+ * 
+ */
+export type autonomy_site_content = Prisma.autonomy_site_contentModel
+/**
+ * Model AdminUser
+ * 
+ */
+export type AdminUser = Prisma.AdminUserModel
+/**
+ * Model AdminSession
+ * 
+ */
+export type AdminSession = Prisma.AdminSessionModel
