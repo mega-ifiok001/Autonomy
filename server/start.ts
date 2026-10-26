@@ -16,6 +16,15 @@ import {
 import type { SiteData } from "../src/lib/content";
 
 const PORT = Number(process.env.PORT ?? 3000);
+// Public address of the site. Set PUBLIC_URL=https://autonomy.com.ng in production.
+const PUBLIC_URL = (process.env.PUBLIC_URL ?? `http://localhost:${PORT}`).replace(/\/+$/, "");
+// Optional comma-separated list of origins allowed to call the API (CORS).
+// Example: ALLOWED_ORIGINS=https://autonomy.com.ng,https://www.autonomy.com.ng
+// When empty, any origin is allowed (fine for local development).
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 
 const MIME: Record<string, string> = {
@@ -72,7 +81,13 @@ async function serveStatic(urlPath: string, res: http.ServerResponse): Promise<v
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.length === 0) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  } else if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") {
@@ -189,7 +204,8 @@ await ensureDefaults().catch((err) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[autonomy] app + API on http://localhost:${PORT}`);
-  console.log(`[autonomy] admin dashboard:    http://localhost:${PORT}/admin`);
-  console.log(`[autonomy] insights:           http://localhost:${PORT}/insights`);
+  console.log(`[autonomy] listening on port ${PORT}`);
+  console.log(`[autonomy] app + API:          ${PUBLIC_URL}`);
+  console.log(`[autonomy] admin dashboard:    ${PUBLIC_URL}/admin`);
+  console.log(`[autonomy] insights:           ${PUBLIC_URL}/insights`);
 });
